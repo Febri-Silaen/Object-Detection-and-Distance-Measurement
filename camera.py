@@ -227,7 +227,7 @@ class ObjectDetection:
                     ) / self.inp_dim
                     
                     output[:, [1, 3]] *= frame.shape[1]
-                    output[:, [2, 4]] *= frame.shape[0]
+                    output[:, [2, 4]] *= frameexit.shape[0]
                     
                     list(map(
                         lambda boxes: write(boxes, frame, self.classes, self.colors),
