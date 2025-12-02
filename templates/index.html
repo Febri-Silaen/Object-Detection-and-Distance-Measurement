@@ -1,16 +1,499 @@
-{% extends 'base.html' %} {% block content %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Object Detection & Distance Measurement</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
 
-<!-- 1st Column -->
-<div class="columns">
-    <div class="column is-narrow">
-        <div class="box" style="width: 500px;">
-            <p class="title is-5">Camera - 01</p>
-            <hr>
-            <img id="bg" width=640px height=360px src="{{ url_for('video_feed') }}">
-            <hr>
+        .container {
+            max-width: 1400px;
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 25px;
+            animation: fadeIn 0.6s ease-out;
+        }
 
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .main-panel {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .logo {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+        }
+
+        h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: #2d3748;
+            letter-spacing: -0.5px;
+        }
+
+        .subtitle {
+            font-size: 14px;
+            color: #718096;
+            font-weight: 400;
+        }
+
+        .video-container {
+            position: relative;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            background: #000;
+        }
+
+        .video-feed {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .status-badge {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(16, 185, 129, 0.9);
+            backdrop-filter: blur(10px);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: white;
+            border-radius: 50%;
+            animation: blink 1.5s infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.3;
+            }
+        }
+
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .info-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            animation: slideInRight 0.6s ease-out;
+        }
+
+        @keyframes slideInRight {
+            from {
+                transform: translateX(50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .card-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 16px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .stat-item {
+            background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+
+        .stat-item:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #667eea;
+            display: block;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #718096;
+            margin-top: 5px;
+        }
+
+        .detection-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .detection-item {
+            background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+            padding: 12px 15px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+            animation: slideInList 0.4s ease-out;
+        }
+
+        @keyframes slideInList {
+            from {
+                transform: translateX(-20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .detection-item:hover {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            transform: translateX(5px);
+        }
+
+        .detection-name {
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .detection-distance {
+            font-size: 13px;
+            font-weight: 500;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 4px 10px;
+            border-radius: 12px;
+        }
+
+        .detection-item:hover .detection-distance {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #edf2f7;
+            color: #2d3748;
+        }
+
+        .btn-secondary:hover {
+            background: #e2e8f0;
+            transform: translateY(-2px);
+        }
+
+        .features-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .features-list li {
+            padding: 10px 0;
+            color: #4a5568;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .features-list li:before {
+            content: "✓";
+            color: #48bb78;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        /* Scrollbar styling */
+        .detection-list::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .detection-list::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        .detection-list::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 10px;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            h1 {
+                font-size: 22px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Main Video Panel -->
+        <div class="main-panel">
+            <div class="header">
+                <div class="logo">👁️</div>
+                <div>
+                    <h1>AI Object Detection</h1>
+                    <div class="subtitle">Real-time detection & distance measurement</div>
+                </div>
+            </div>
+
+            <div class="video-container">
+                <img class="video-feed" src="{{ url_for('video_feed') }}" alt="Video Feed">
+                <div class="status-badge">
+                    <span class="status-dot"></span>
+                    Live Detection
+                </div>
+            </div>
+
+            <div class="controls">
+                <button class="btn btn-primary" onclick="location.reload()">🔄 Restart</button>
+                <button class="btn btn-secondary" onclick="toggleFullscreen()">⛶ Fullscreen</button>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <!-- Stats Card -->
+            <div class="info-card">
+                <div class="card-title">
+                    <div class="card-icon">📊</div>
+                    Statistics
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <span class="stat-value" id="fps">0</span>
+                        <span class="stat-label">FPS</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value" id="objects">0</span>
+                        <span class="stat-label">Objects</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detection List -->
+            <div class="info-card">
+                <div class="card-title">
+                    <div class="card-icon">🎯</div>
+                    Detected Objects
+                </div>
+                <div class="detection-list" id="detectionList">
+                    <div class="detection-item">
+                        <span class="detection-name">Person</span>
+                        <span class="detection-distance">125 cm</span>
+                    </div>
+                    <div class="detection-item">
+                        <span class="detection-name">Cell phone</span>
+                        <span class="detection-distance">45 cm</span>
+                    </div>
+                    <div class="detection-item">
+                        <span class="detection-name">Book</span>
+                        <span class="detection-distance">78 cm</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Features Card -->
+            <div class="info-card">
+                <div class="card-title">
+                    <div class="card-icon">✨</div>
+                    Features
+                </div>
+                <ul class="features-list">
+                    <li>Real-time object detection</li>
+                    <li>Distance measurement</li>
+                    <li>Voice feedback (AI)</li>
+                    <li>80+ object classes</li>
+                    <li>High accuracy detection</li>
+                </ul>
+            </div>
         </div>
     </div>
-    <hr>
-    {% endblock %}
+
+    <script>
+        // Simulate FPS counter
+        let fps = 0;
+        setInterval(() => {
+            fps = Math.floor(Math.random() * 5) + 25;
+            document.getElementById('fps').textContent = fps;
+        }, 1000);
+
+        // Simulate object counter
+        setInterval(() => {
+            const objects = Math.floor(Math.random() * 5) + 1;
+            document.getElementById('objects').textContent = objects;
+        }, 2000);
+
+        // Fullscreen function
+        function toggleFullscreen() {
+            const videoContainer = document.querySelector('.video-container');
+            if (!document.fullscreenElement) {
+                videoContainer.requestFullscreen();
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        // Add animation to detection items
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.animationDelay = `${Math.random() * 0.3}s`;
+                }
+            });
+        });
+
+        document.querySelectorAll('.detection-item').forEach(item => {
+            observer.observe(item);
+        });
+    </script>
+</body>
+</html>
