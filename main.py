@@ -196,7 +196,6 @@ def main(camera_id=0):
         return
 
     print("Starting. Press 'q' to quit.")
-
     while True:
         ret, frame = cap.read()
         if not ret:
